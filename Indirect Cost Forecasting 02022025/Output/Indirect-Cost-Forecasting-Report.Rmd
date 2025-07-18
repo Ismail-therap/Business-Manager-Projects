@@ -1,0 +1,85 @@
+---
+title: "Indirect Cost Forecasting"
+author: "Md Ismail Hossain"
+date: "2025-01-30"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## R Markdown
+
+```{r}
+# Load necessary libraries
+library(forecast)
+library(tseries)
+library(readr)
+library(readxl)
+library(ggplot2)
+
+
+# Read the data
+data <- read_excel("C:/Users/mhossa11/OneDrive - University of Wyoming/Projects/Indirect Cost Forecasting/Data/Monthly IC Expenditures FY22-partial FY25.xlsx", 
+    sheet = "Clean Data")
+
+# Convert Date column to Date format
+data$Date <- as.Date(data$Date, format="%m/%d/%Y")
+
+# Create a time series object
+ts_data <- ts(data$Indirect_Cost, start=c(2021,7), frequency=12)  # Monthly data starting from July 2021
+
+# Create ggplot visualization
+ggplot(data, aes(x = Date, y = Indirect_Cost)) +
+  geom_line(color = "blue", size = 1) +  # Line color and thickness
+  geom_point(color = "red", size = 2) +  # Points for better visibility
+  scale_x_date(date_breaks = "3 months", date_labels = "%b-%Y") +  # Show x-axis labels for every 3 months
+  labs(title = "Indirect Cost Over Time",
+       x = "Date",
+       y = "Indirect Cost") +
+  theme_minimal() +  # Apply a minimal clean theme
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 10),  # Rotate x-axis labels
+        plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+        axis.title = element_text(size = 12),
+        axis.text = element_text(size = 10))
+
+
+
+```
+
+
+
+```{r}
+# Check stationarity using Augmented Dickey-Fuller (ADF) test
+adf_test <- adf.test(ts_data)
+
+# Differencing if needed
+if(adf_test$p.value > 0.05) {
+  diff_data <- diff(ts_data, differences=1)  # First differencing
+  adf_test_diff <- adf.test(diff_data)
+  
+  # Seasonal differencing if required
+  if(adf_test_diff$p.value > 0.05) {
+    diff_data <- diff(diff_data, lag=12)  # Seasonal differencing
+  }
+} else {
+  diff_data <- ts_data  # Already stationary
+}
+
+# Auto ARIMA to find best SARIMA parameters
+best_model <- auto.arima(ts_data, seasonal=TRUE)
+
+# Print model summary
+summary(best_model)
+
+# Forecast for next 12 months
+future_forecast <- forecast(best_model, h=6)
+
+# Plot the forecast
+plot(future_forecast, main="SARIMA Forecast for Indirect Cost", ylab="Cost", xlab="Year", col="red")
+
+# Print forecast values
+print(future_forecast)
+```
+

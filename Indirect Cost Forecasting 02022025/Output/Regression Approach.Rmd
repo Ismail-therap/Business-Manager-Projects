@@ -1,0 +1,112 @@
+---
+title: 'Indirect Cost Forecasting: Regression Approach'
+author: "Md Ismail Hossain"
+date: "2025-03-03"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+\newpage
+
+# Data Structure:
+
+## Independent Variables:
+
+ - Award Number [Award External Funding By Dept_Details.xlsx]
+ - Award Fund Amount [Award External Funding By Dept_Details.xlsx]
+ - Indirect Cost Rate [Column Burden Schedule in Project Committed Cost Details_Results.xlsx]: From F and A Schedule Descriptions_Results.xlsx try to understand the explanaiton of  F&A Schedule and convert that Burden Schedule to a numberic value to multiply with the Award Fund Amount to calculate the Indirect cost amount.
+ - Grant Funding Type [Project Financial Summary_Results.xlsx]
+ - Grant Duration [Award Start Date - Award End Date] [Award Personnel Details_Current Awards.xlsx]
+ 
+ 
+ 
+ Project Information_Results.xlsx data have:
+ - Award Number
+ - Award Type
+ - Project Funding Type
+ - Award Start Date
+ - Award End Date
+ - Award F&A Schedule
+ 
+ 
+ 
+ 
+ 
+## Dependent Variables:
+
+ - Length of spending [First Spending Date - Award Date]: Either we have to use the first Accounting Date or Expenditure Date as the First Spending Date from Project Committed Cost Details_Results.xlsx data. Or should I use Expenditure Date from Project Expenditure Details_Results.xlsx data???
+
+
+# Coding:
+
+
+```{r}
+library(readxl)
+library(dplyr)
+library(lubridate)
+
+# Load datasets
+award_funding <- read_excel("/mnt/data/Award External Funding By Dept_Details.xlsx")
+personnel_awards <- read_excel("/mnt/data/Award Personnel Details_Current Awards.xlsx")
+fa_schedule <- read_excel("/mnt/data/F and A Schedule Descriptions_Results.xlsx")
+committed_costs <- read_excel("/mnt/data/Project Committed Cost Details_Results.xlsx")
+expenditure_details <- read_excel("/mnt/data/Project Expenditure Details_Results.xlsx")
+financial_summary <- read_excel("/mnt/data/Project Financial Summary_Results.xlsx")
+project_info <- read_excel("/mnt/data/Project Information_Results.xlsx")
+
+date_conversion <- function(date_column) {
+  as.Date(date_column, format = "%Y-%m-%d")
+}
+
+# Extract Indirect Cost Rate from FA Schedule
+tidy_fa_schedule <- fa_schedule %>%
+  select(`Burden Schedule`, `F&A Rate`) %>%
+  mutate(`F&A Rate` = as.numeric(`F&A Rate`))
+
+# Merge Award Data with Project Information
+merged_data <- project_info %>%
+  left_join(award_funding, by = "Award Number") %>%
+  left_join(tidy_fa_schedule, by = c("Award F&A Schedule" = "Burden Schedule")) %>%
+  mutate(
+    Indirect_Cost_Amount = `Award Fund Amount` * `F&A Rate`,
+    Award_Start_Date = date_conversion(`Award Start Date`),
+    Award_End_Date = date_conversion(`Award End Date`),
+    Grant_Duration = as.numeric(Award_End_Date - Award_Start_Date)
+  )
+
+# Determine First Spending Date
+first_spending_date <- committed_costs %>%
+  group_by(`Award Number`) %>%
+  summarise(First_Spending_Date = min(date_conversion(`Accounting Date`)))
+
+# Merge with expenditure data if necessary
+first_spending_date_exp <- expenditure_details %>%
+  group_by(`Award Number`) %>%
+  summarise(First_Expenditure_Date = min(date_conversion(`Expenditure Date`)))
+
+# Choose the earliest spending date
+spending_dates <- first_spending_date %>%
+  left_join(first_spending_date_exp, by = "Award Number") %>%
+  mutate(First_Spending_Date = pmin(First_Spending_Date, First_Expenditure_Date, na.rm = TRUE))
+
+# Merge with main dataset
+final_data <- merged_data %>%
+  left_join(spending_dates, by = "Award Number") %>%
+  mutate(
+    Length_of_Spending = as.numeric(First_Spending_Date - Award_Start_Date)
+  )
+
+# Select relevant columns
+final_dataset <- final_data %>%
+  select(Award_Number, `Award Fund Amount`, Indirect_Cost_Amount, Grant_Duration, Length_of_Spending, `Grant Funding Type`)
+
+# Save the final dataset to a CSV file
+write.csv(final_dataset, "/mnt/data/final_dataset.csv", row.names = FALSE)
+
+print("Final dataset created successfully.")
+
+```
+

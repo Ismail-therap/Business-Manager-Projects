@@ -1,0 +1,252 @@
+---
+title: 'Spending start days prediction: Regression Approach'
+author: "Md Ismail Hossain"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,warning = FALSE, message = FALSE)
+```
+
+\newpage
+
+# Prediction Model Selection:
+
+
+```{r}
+
+# =============================
+# Load Necessary Libraries
+# =============================
+library(MASS)
+library(nnet)
+library(dplyr)
+library(Matrix)
+library(xgboost)
+library(caret)
+library(Metrics)  # For calculating RMSE
+library(GGally)
+
+
+
+# Get the Prepeared Data
+source("C:/Users/mhossa11/OneDrive - University of Wyoming/Projects/Indirect Cost Forecasting 02022025/Regression Approach/Code/1.Data_Preperation.R")
+
+
+```
+
+```{r}
+# =============================
+# Load Necessary Libraries
+# =============================
+library(MASS)
+library(dplyr)
+library(Matrix)
+library(xgboost)
+library(caret)
+library(Metrics)
+library(readxl)
+library(VGAM)
+
+
+# =============================
+# Model Preparation
+# =============================
+set.seed(123)  # For reproducibility
+
+# Generate dummy variables for categorical predictors
+dummies <- dummyVars(" ~ .", data = full_data_for_modelling[, c("Project Funding Type", "Project Type")])
+dummy_data <- as.data.frame(predict(dummies, newdata = full_data_for_modelling))
+
+# Scale numerical variables
+scaled_data <- as.data.frame(scale(full_data_for_modelling[, c(
+  "Number_of_Project_as_Principal_Investigator", 
+  "Total_project_person", 
+  "Project_duration", 
+  "Project Funding Amount"
+)]))
+
+# Combine scaled numerical data and dummy variables
+scaled_data <- cbind(scaled_data, dummy_data)
+
+# Add the response variable
+scaled_data$Expense_starting_days <- full_data_for_modelling$Expense_starting_days
+
+
+```
+
+
+
+
+
+```{r}
+
+# =============================
+# 10-Fold Cross-Validation Control
+# =============================
+control <- trainControl(method = "cv", number = 10)
+
+
+# =============================
+# 1. Ordinary Least Squares (OLS) Regression Model
+# =============================
+ols_model <- train(Expense_starting_days ~ ., data = scaled_data, method = "lm", trControl = control)
+ols_rmse <- mean(ols_model$resample$RMSE)
+ols_mae <- mean(ols_model$resample$MAE)
+bic_ols <- BIC(ols_model$finalModel)
+
+
+# =============================
+# 2. Poisson Regression Model
+# =============================
+poisson_model <- train(Expense_starting_days ~ ., data = scaled_data, method = "glm", 
+                       family = poisson(link = "log"), trControl = control)
+poisson_rmse <- mean(poisson_model$resample$RMSE)
+poisson_mae <- mean(poisson_model$resample$MAE)
+bic_poisson <- BIC(poisson_model$finalModel)
+
+
+# =============================
+# 3. Negative Binomial Model
+# =============================
+negbin_model <- train(Expense_starting_days ~ ., data = scaled_data, method = "glm.nb", trControl = control)
+negbin_rmse <- mean(negbin_model$resample$RMSE)
+negbin_mae <- mean(negbin_model$resample$MAE)
+bic_negbin <- BIC(negbin_model$finalModel)
+
+
+# =============================
+# 4. XGBoost Model (10-Fold Cross-Validation)
+# =============================
+data_matrix <- as.matrix(scaled_data[, -which(names(scaled_data) == "Expense_starting_days")])
+label <- scaled_data$Expense_starting_days
+
+# Perform 10-Fold Cross-Validation using xgb.cv
+xgb_cv_model <- xgb.cv(
+  data = data_matrix,
+  label = label,
+  nrounds = 100,
+  objective = "reg:squarederror",
+  nfold = 10,
+  metrics = list("rmse"),
+  verbose = 0
+)
+
+# Extract RMSE from Cross-Validation
+xgb_rmse <- min(xgb_cv_model$evaluation_log$test_rmse_mean)
+xgb_mae <- min(xgb_cv_model$evaluation_log$test_rmse_mean)  # Approximating MAE using RMSE (you can calculate separately if needed)
+
+# Train the model to get predictions for BIC calculation
+xgb_final_model <- xgboost(
+  data = data_matrix,
+  label = label,
+  nrounds = 100,
+  objective = "reg:squarederror",
+  verbose = 0
+)
+
+# Predictions for BIC calculation
+predictions_xgb <- predict(xgb_final_model, data_matrix)
+
+# Calculate RSS and BIC for XGBoost
+num_params_xgb <- 100  # Number of trees used
+n <- nrow(scaled_data)
+rss_xgb <- sum((label - predictions_xgb)^2)
+bic_xgb <- n * log(rss_xgb / n) + num_params_xgb * log(n)
+
+
+# =============================
+# Comparison Table
+# =============================
+model_comparison <- data.frame(
+  Model = c("OLS", "Poisson", "Negative Binomial", "XGBoost"),
+  RMSE = c(ols_rmse, poisson_rmse, negbin_rmse, xgb_rmse),
+  MAE = c(ols_mae, poisson_mae, negbin_mae, xgb_mae),
+  BIC = c(bic_ols, bic_poisson, bic_negbin, bic_xgb)
+)
+
+# Print Comparison Table
+print(model_comparison)
+```
+
+So, Negative Binomial is our selected model for doing prediction. 
+
+# Prediction:
+
+So, we are doing the prediction for the test data where the project start dates are after 01/01/2025.
+
+```{r}
+# =============================
+# Prediction for New Data (project_start_date_after_subsetted_01012025)
+# =============================
+
+# Ensure all the required columns are present in the test dataset
+scaled_data_test <- as.data.frame(scale(project_start_date_after_subsetted_01012025[, c(
+  "Number_of_Project_as_Principal_Investigator", 
+  "Total_project_person", 
+  "Project_duration", 
+  "Project Funding Amount"
+)]))
+
+# Generate dummy variables using the same dummyVars object used during training
+dummy_data_test <- as.data.frame(predict(dummies, newdata = project_start_date_after_subsetted_01012025))
+
+# Combine scaled numerical data and dummy variables
+scaled_data_test <- cbind(scaled_data_test, dummy_data_test)
+
+# Convert to matrix format for XGBoost
+data_matrix_test <- as.matrix(scaled_data_test)
+
+
+# =============================
+# Predictions
+# =============================
+
+project_start_date_after_subsetted_01012025 <- project_start_date_after_subsetted_01012025 %>%
+  mutate(
+    # Negative Binomial Model (Tuned) - Using Best Model
+    Predicted_Expense_starting_days_nb = round(predict(negbin_model, newdata = scaled_data_test, type = "raw"))
+  )
+```
+
+
+## Adding Indirect Cost Information
+
+```{r}
+# =====================================================
+# Load and Prepare Budget to Actual Data (Indirect Cost)
+# =====================================================
+# Read the Excel file containing budget-to-actual data
+Budget_to_Actual <- read_excel("C:/Users/mhossa11/OneDrive - University of Wyoming/Projects/Indirect Cost Forecasting 02022025/Regression Approach/Data/Output1.xlsx")
+
+# Extract indirect cost data (F&A category)
+indirect_cost_data <- Budget_to_Actual %>%
+  filter(`Expenditure Category Name` == "F&A") %>%  # Filter for F&A category
+  rename(Indirect_cost = `Budget Amount`) %>%       # Rename column for clarity
+  subset(select = c("Project Number", "Indirect_cost"))  # Select relevant columns using subset
+
+# Merge indirect cost data with project details
+project_start_date_after_01012025_with_indirect_cost <- left_join(project_start_date_after_subsetted_01012025, indirect_cost_data, by = "Project Number")
+```
+
+## Creating Expense Start Date 
+
+```{r}
+project_start_date <- project_expenditure_data[,c("Project Number","Project Start Date")]
+Final_output_data <- left_join(project_start_date_after_01012025_with_indirect_cost, project_start_date, by = "Project Number")
+
+# Ensure your "Project Start Date" column is of Date type
+Final_output_data$`Project Start Date` <- as.Date(Final_output_data$`Project Start Date`)
+
+# Create the new column by adding days to the Project Start Date
+Final_output_data <- Final_output_data %>%
+  mutate(Predicted_date_to_start_expense = `Project Start Date` + Predicted_Expense_starting_days_nb)
+
+
+write.csv(Final_output_data,"C:/Users/mhossa11/OneDrive - University of Wyoming/Projects/Indirect Cost Forecasting 02022025/Output/Finally_Predicted_Outputs/Final_output_data_04012025.csv")
+
+print(paste0("Prediction done for: ",length(unique(Final_output_data$`Project Number`))," projects!"))
+```
+
+

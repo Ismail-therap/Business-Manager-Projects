@@ -1,0 +1,269 @@
+---
+title: "Indirect Cost Forecasting"
+author: "Md Ismail Hossain"
+date: "2025-01-30"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,warning = FALSE, message = FALSE)
+```
+
+\newpage
+
+# Introduction
+This report presents the analysis and forecasting of indirect costs using three different models: **SARIMA, ETS, and Prophet**. The objective is to identify the most suitable forecasting method and predict future costs with high accuracy.
+
+# Understanding the Data
+The dataset consists of **monthly indirect cost data from July 2021 to January 2025**. A preliminary analysis revealed **seasonality and trend variations**, necessitating an advanced forecasting approach.
+
+
+```{r}
+# Load necessary libraries
+library(forecast)
+library(tseries)
+library(readr)
+library(readxl)
+library(ggplot2)
+library(prophet)
+
+
+# Read the data
+data <- read_excel("C:/Users/mhossa11/OneDrive - University of Wyoming/Projects/Indirect Cost Forecasting 02022025/Data/Monthly IC Expenditures FY22-partial FY25.xlsx", 
+    sheet = "Clean Data")
+
+# Convert Date column to Date format
+data$Date <- as.Date(data$Date, format="%m/%d/%Y")
+
+# Create a time series object
+ts_data <- ts(data$Indirect_Cost, start=c(2021,7), frequency=12)  # Monthly data starting from July 2021
+
+# Create ggplot visualization
+ggplot(data, aes(x = Date, y = Indirect_Cost)) +
+  geom_line(color = "blue", size = 1) +  # Line color and thickness
+  geom_point(color = "red", size = 2) +  # Points for better visibility
+  scale_x_date(date_breaks = "3 months", date_labels = "%b-%Y") +  # Show x-axis labels for every 3 months
+  labs(title = "Indirect Cost Over Time",
+       x = "Date",
+       y = "Indirect Cost") +
+  theme_minimal() +  # Apply a minimal clean theme
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 10),  # Rotate x-axis labels
+        plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+        axis.title = element_text(size = 12),
+        axis.text = element_text(size = 10))
+
+
+
+```
+
+
+
+
+# Selecting Best Forecasting Model
+
+
+
+We compared three forecasting models:
+
+ - **SARIMA (Seasonal ARIMA)**
+ - **ETS (Exponential Smoothing)**
+ - **Prophet (Additive Time Series Model by Facebook)**
+
+Each model was trained on **80% of the dataset** and evaluated using **Root Mean Squared Error (RMSE)**. The results were:
+
+\[
+\text{RMSE} = \sqrt{\frac{1}{n} \sum_{i=1}^{n} (y_i - \hat{y_i})^2}
+\]
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|c|c|}
+\hline
+\textbf{Model} & \textbf{RMSE (Lower is Better)} \\
+\hline
+SARIMA & 27,8408.8 \\
+Prophet & \textbf{26,3486.9} \\
+ETS & 37,5984.8 \\
+\hline
+\end{tabular}
+\caption{Model Performance Comparison Based on RMSE}
+\end{table}
+
+The **ETS model performed the worst**, while **Prophet had the lowest RMSE, making it the best model** for forecasting indirect costs.
+
+\textbf{Conclusion:} Prophet was selected as the best model due to its superior performance in capturing seasonality and trends.
+
+
+
+
+```{r}
+# --------- 1️⃣ TRAIN-TEST SPLIT ---------
+train_size <- round(length(ts_data) * 0.8)
+train_data <- ts_data[1:train_size]
+test_data <- ts_data[(train_size+1):length(ts_data)]
+
+# --------- 2️⃣ SARIMA MODEL ---------
+# Fit SARIMA Model (d=0 since ADF test confirmed stationarity)
+sarima_model <- auto.arima(train_data, seasonal=TRUE, d=0)
+
+# Forecast using SARIMA
+sarima_forecast <- forecast(sarima_model, h=length(test_data))
+
+# Compute RMSE for SARIMA
+rmse_sarima <- sqrt(mean((sarima_forecast$mean - test_data)^2))
+#print(paste("RMSE for SARIMA:", rmse_sarima))
+
+# --------- 3️⃣ PROPHET MODEL ---------
+# Prepare data for Prophet (Prophet requires specific column names)
+prophet_df <- data.frame(ds=data$Date[1:train_size], y=train_data)
+
+# Fit the Prophet model
+prophet_model <- prophet(prophet_df)
+
+# Create future dataframe for Prophet
+future <- make_future_dataframe(prophet_model, periods=length(test_data), freq="month")
+
+# Forecast using Prophet
+prophet_forecast <- predict(prophet_model, future)
+
+# Extract the forecast for test period
+prophet_predictions <- prophet_forecast$yhat[(nrow(prophet_forecast)-length(test_data)+1):nrow(prophet_forecast)]
+
+# Compute RMSE for Prophet
+rmse_prophet <- sqrt(mean((prophet_predictions - test_data)^2))
+#print(paste("RMSE for Prophet:", rmse_prophet))
+
+# --------- 4️⃣ ETS MODEL ---------
+# Fit ETS Model
+ets_model <- ets(train_data)
+
+# Forecast using ETS
+ets_forecast <- forecast(ets_model, h=length(test_data))
+
+# Compute RMSE for ETS
+rmse_ets <- sqrt(mean((ets_forecast$mean - test_data)^2))
+#print(paste("RMSE for ETS:", rmse_ets))
+
+# --------- 5️⃣ VISUALIZATION ---------
+# Combine forecast results for comparison
+forecast_df <- data.frame(
+  Date = data$Date[(train_size+1):length(ts_data)],
+  Actual = test_data,
+  SARIMA = sarima_forecast$mean,
+  Prophet = prophet_predictions,
+  ETS = ets_forecast$mean
+)
+
+# Plot Actual vs Predicted for SARIMA, Prophet, and ETS
+ggplot(forecast_df, aes(x=Date)) +
+  geom_line(aes(y=Actual, color="Actual"), size=1.2) +
+  geom_line(aes(y=SARIMA, color="SARIMA Forecast"), size=1) +
+  geom_line(aes(y=Prophet, color="Prophet Forecast"), size=1) +
+  geom_line(aes(y=ETS, color="ETS Forecast"), size=1) +
+  labs(title="SARIMA vs. Prophet vs. ETS Forecasting Comparison",
+       x="Date", y="Indirect Cost") +
+  scale_color_manual(name="Legend",
+                     values=c("Actual"="black", "SARIMA Forecast"="blue", 
+                              "Prophet Forecast"="green", "ETS Forecast"="red")) +
+  theme_minimal()
+
+# --------- 6️⃣ PRINT COMPARISON RESULTS ---------
+print("RMSE Comparison:")
+rmse_results <- data.frame(Model = c("SARIMA", "Prophet", "ETS"),
+                           RMSE = c(rmse_sarima, rmse_prophet, rmse_ets))
+#print(rmse_results)
+
+# Find the best model
+best_model <- rmse_results$Model[which.min(rmse_results$RMSE)]
+print(paste("Best Model Based on RMSE:", best_model))
+```
+
+# Using Prophet Model to Forcast
+
+Since Prophet performed best, we trained it on the **entire dataset** and generated forecasts for the next **12 months**.
+
+
+```{r}
+# Load necessary libraries
+library(prophet)
+library(ggplot2)
+
+# Read the data
+data <- read_excel("C:/Users/mhossa11/OneDrive - University of Wyoming/Projects/Indirect Cost Forecasting 02022025/Data/Monthly IC Expenditures FY22-partial FY25.xlsx", 
+    sheet = "Clean Data")
+
+# Convert Date column to Date format
+data$Date <- as.Date(data$Date, format="%m/%d/%Y")
+
+# Rename columns for Prophet
+df <- data.frame(ds = data$Date, y = data$Indirect_Cost)
+
+# --------- 1️⃣ FIT PROPHET MODEL ---------
+# Initialize and fit Prophet model
+prophet_model <- prophet(df,interval.width = 0.95)
+
+# --------- 2️⃣ FORECAST NEXT 12 MONTHS ---------
+# Create future dates (12 months ahead)
+future <- make_future_dataframe(prophet_model, periods = 12, freq = "month")
+
+# Predict future values
+forecast <- predict(prophet_model, future)
+
+
+# --------- 4️⃣ PLOT COMPONENTS (Trend & Seasonality) ---------
+#prophet_plot_components(prophet_model, forecast)
+
+
+
+```
+
+
+# Next 12 Month Forecast
+
+\textbf{Visualization:} The Prophet model effectively captures seasonal patterns and upward trends.
+
+```{r}
+# --------- 3️⃣ PLOT THE FORECAST ---------
+# Plot forecasted values
+plot(prophet_model, forecast) +
+  ggtitle("Forecast for Indirect Cost") +
+  xlab("Date") +  # Set X-axis label
+  ylab("Indirect Cost")  # Set Y-axis label
+```
+
+
+```{r}
+# --------- 5️⃣ PRINT FORECASTED VALUES ---------
+# Display forecasted data (next 12 months)
+forecasted_value <- tail(forecast[, c("ds", "yhat", "yhat_lower", "yhat_upper")],12)
+colnames(forecasted_value) <- c("Date", "Forecast", "Lower CI (95%)", "Upper CI (95%)")
+forecasted_value
+
+write.csv(forecasted_value,"forecasted_value_feb_25_to_Jan_26.csv")
+```
+
+## Interpretation of Forecast
+- A **steady increase in indirect costs** is projected.
+- Costs are expected to exceed **$2,100,000 by June 2025**.
+- The **confidence interval indicates possible fluctuations**. The 95% confidence interval (CI) for the forecasted values tells us the range in which we expect the actual indirect costs to fall, 95% of the time.
+
+Think of it as a margin of error around our prediction.
+
+
+
+
+
+
+# Conclusion and Recommendations
+
+## Conclusion
+- The **Prophet model outperformed SARIMA and ETS**, achieving the lowest RMSE.
+- The forecast suggests **a steady rise in costs**, emphasizing the need for financial planning.
+- Confidence intervals indicate **potential variations**, requiring periodic monitoring.
+
+## Recommendations
+1. **Monitor monthly actual costs** and compare with forecasts for adjustments.
+2. **Retrain the model periodically** to incorporate new data.

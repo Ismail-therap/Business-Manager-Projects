@@ -1,0 +1,16 @@
+- Federal vs State: 
+- Regression approach: Create the data... Quarterly or Yearly [Expenditure impacting indirect cost, Grant type, Funding ]
+- Research, Manufacturing, Instruction (Educational grants)
+- Research (Federal higher indirect cost)
+- So, see the lag effect of research funding or expenditure on indirect cost is the goal. By that way we could predict the indirect cost also.
+
+Data columns could be following:
+
+Year
+Research type (Instruction or Educational grants, Service, Research - Federal)
+Grant amount or Funding Amount
+Expenditure 
+Indirect cost rate
+
+Indirect cost (Next year)
+

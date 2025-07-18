@@ -1,0 +1,422 @@
+---
+title: 'Spending start prediction for delayed project: A Machine Learning Approach'
+author: "Md Ismail Hossain"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,warning = FALSE, message = FALSE)
+
+
+```
+
+\newpage
+
+
+\section{Project Goal}
+
+The primary objective of this project is to develop predictive models to estimate *Expense Starting Days*—the number of days between a project’s official start date and its first recorded expenditure. This metric is essential for financial planning and administrative decision-making. The analysis incorporates project-level predictors such as funding amount, duration, personnel count, and funding type.
+
+Four regression models were evaluated: Ordinary Least Squares (OLS), Decision Tree (DT), Random Forest (RF), and XGBoost. These models were compared using Root Mean Squared Error (RMSE) and Mean Absolute Error (MAE) to assess predictive accuracy.
+
+
+
+
+\newpage
+
+```{r}
+# Get the Prepeared Data
+source("C:/Users/mhossa11/OneDrive - University of Wyoming/Projects/Indirect Cost Forecasting 02022025/Regression Approach/Code/3.All_Source_Data_Merging_and_Finalizing_for_Modelling.R")
+# Fix global display options
+options(digits = 7)       # Reset significant digits to default
+options(scipen = 999)     # Still suppress scientific notation
+```
+
+
+# Overall Summary
+```{r}
+summary(full_data_for_modelling)
+```
+
+
+
+# Bi-variate Analysis
+## Categorical Variables
+
+
+
+```{r}
+# For binary factors: t-tests
+t_test <- full_data_for_modelling %>%
+  select(`Expense_starting_days`, `Award Type`, `subawards subcontracts`,`Approval_Required`,Chemical_or_Hazard,Foreign_Involvement,Technology_or_IP_Involved) %>%
+  pivot_longer(cols = -Expense_starting_days, names_to = "Variable", values_to = "Group") %>%
+  group_by(Variable) %>%
+  t_test(Expense_starting_days ~ Group) %>%
+  adjust_pvalue(method = "bonferroni") %>%
+  add_significance()
+
+t_test
+```
+
+```{r}
+
+# For multi-level factors: ANOVA
+anova <- full_data_for_modelling %>%
+  select(`Expense_starting_days`, `Project Fund Source`, `Academic_Semester`,`Reduced_FA`) %>%
+  pivot_longer(cols = -Expense_starting_days, names_to = "Variable", values_to = "Group") %>%
+  group_by(Variable) %>%
+  anova_test(Expense_starting_days ~ Group)
+anova
+```
+
+
+## Contineous Variables 
+
+```{r}
+# =============================
+# Bivariate Relationships with Expense_starting_days
+# =============================
+ggpairs(full_data_for_modelling, 
+        columns = c("Expense_starting_days","Number_of_Project_as_Principal_Investigator", 
+                    "Total_project_person", "Project_duration", 
+                    "Project Funding Amount"))
+
+
+```
+
+
+## Dependent Variable heavily right-skewed:
+
+
+As the dependent variable heavily right skewed, we should use transformation of the dependent variable.
+
+```{r}
+library(ggplot2)
+library(patchwork)  # for side-by-side plots
+
+# Create transformed versions
+df <- full_data_for_modelling
+df$log_trans  <- log1p(df$Expense_starting_days)
+df$sqrt_trans <- sqrt(df$Expense_starting_days)
+df$inv_trans  <- 1 / (df$Expense_starting_days + 1)  # Avoid division by zero
+
+# Define plots
+p1 <- ggplot(df, aes(x = Expense_starting_days)) +
+  geom_histogram(bins = 30, fill = "skyblue", color = "black") +
+  ggtitle("Original Distribution")
+
+p2 <- ggplot(df, aes(x = log_trans)) +
+  geom_histogram(bins = 30, fill = "lightgreen", color = "black") +
+  ggtitle("Log1p Transform")
+
+p3 <- ggplot(df, aes(x = sqrt_trans)) +
+  geom_histogram(bins = 30, fill = "orange", color = "black") +
+  ggtitle("Square Root Transform")
+
+p4 <- ggplot(df, aes(x = inv_trans)) +
+  geom_histogram(bins = 30, fill = "pink", color = "black") +
+  ggtitle("Reciprocal Transform")
+
+# Combine with patchwork
+p1 + p2 + p3 + p4 + plot_layout(ncol = 2)
+
+```
+
+
+\newpage
+
+## Methodology
+
+This analysis aimed to predict `Expense_starting_days`, defined as the number of days between a project's award date and the actual expense start date. Accurate forecasting of this interval is important for improving financial planning and administrative readiness. Multiple regression models were evaluated to identify the most accurate and interpretable approach.
+
+### Data Preparation
+
+The response variable was log-transformed to reduce skewness, and all predictors were centered and scaled to ensure compatibility across algorithms.
+
+### Modeling Approach
+
+We applied and compared several regression models, including **Ordinary Least Squares (OLS)**, **Decision Tree**, **Random Forest**, and **XGBoost**. Each model was trained using **10-fold cross-validation** to ensure robust and unbiased performance estimates.
+
+### Performance Metrics
+
+Model performance was evaluated using:
+
+- **Root Mean Squared Error (RMSE):** Measures the typical magnitude of prediction errors, penalizing larger deviations more heavily.
+- **Mean Absolute Error (MAE):** Represents the average prediction error in days, offering direct interpretability.
+
+### Final Model Selection
+
+Among all models tested, **Random Forest** produced the lowest RMSE and MAE, indicating superior predictive performance in estimating expense start delays. It was therefore selected as the final model.
+
+
+```{r}
+# =============================
+# Model Preparation
+# =============================
+set.seed(123)  # For reproducibility
+
+# Define numeric columns
+numeric_cols <- c("Number_of_Project_as_Principal_Investigator", 
+                  "Total_project_person", 
+                  "Project_duration", 
+                  "Project Funding Amount")
+
+# Create and apply preprocessing object for numeric variables
+preproc <- preProcess(full_data_for_modelling[, numeric_cols], method = c("center", "scale"))
+scaled_numeric <- predict(preproc, full_data_for_modelling[, numeric_cols])
+
+# Generate dummy variables for categorical predictors
+dummies <- dummyVars(" ~ .", data = full_data_for_modelling[, c("Project Fund Source",
+                                                                "Award Type",
+                                                                "Academic_Semester",
+                                                                "Reduced_FA",
+                                                                "subawards subcontracts",
+                                                                "Approval_Required",
+                                                                "Chemical_or_Hazard",
+                                                                "Foreign_Involvement",
+                                                                "Technology_or_IP_Involved")])
+dummy_data <- as.data.frame(predict(dummies, newdata = full_data_for_modelling))
+
+# Combine all predictors
+scaled_data <- cbind(scaled_numeric, dummy_data)
+scaled_data$Expense_starting_days <- full_data_for_modelling$Expense_starting_days
+
+# Save preprocessing tools
+saveRDS(preproc, file = file.path(output_path, "preproc_numeric_scaling.rds"))
+saveRDS(dummies, file = file.path(output_path, "dummies.rds"))
+
+```
+
+```{r,warning=FALSE,message=FALSE}
+# =====================================================
+# 0.  Libraries & Setup -------------------------------
+# =====================================================
+library(caret)
+library(ranger)     # Random-Forest backend
+library(rpart)      # CART
+library(xgboost)    # Gradient boosting
+set.seed(123)
+
+# -----------------------------------------------------
+# 0A.  Make column names syntactically safe
+# -----------------------------------------------------
+scaled_data <- scaled_data[ , ]                       # drop tbl_df class if any
+names(scaled_data) <- make.names(names(scaled_data), unique = TRUE)
+
+# Target transformation
+scaled_data$log_expense <- log1p(scaled_data$Expense_starting_days)
+
+# Feature / response split
+predictors <- setdiff(names(scaled_data),
+                      c("Expense_starting_days", "log_expense"))
+X_df  <- scaled_data[ , predictors]
+y_true <- scaled_data$Expense_starting_days
+
+# 10-fold CV
+control <- trainControl(method = "cv", number = 10, verboseIter = FALSE)
+
+# -----------------------------------------------------
+# Helper functions
+# -----------------------------------------------------
+orig_rmse <- function(log_pred, y) sqrt(mean((expm1(log_pred) - y)^2))
+orig_mae  <- function(log_pred, y) mean(abs(expm1(log_pred) - y))
+
+add_row <- function(tbl, name, mins, rmse, mae) {
+  rbind(tbl, data.frame(Model = name,
+                        Train_minutes = round(mins, 2),
+                        RMSE = round(rmse, 2),
+                        MAE  = round(mae , 2)))
+}
+model_cmp <- data.frame(Model = character(),
+                        Train_minutes = numeric(),
+                        RMSE = numeric(),
+                        MAE  = numeric())
+
+# =====================================================
+# 1.  Linear Regression -------------------------------
+# =====================================================
+t <- system.time({
+  ols_model <- train(
+    x = X_df,
+    y = log1p(y_true),
+    method = "lm",
+    trControl = control
+  )
+})
+ols_pred <- predict(ols_model, X_df)
+model_cmp <- add_row(model_cmp, "Linear Regression",
+                     t["elapsed"]/60,
+                     orig_rmse(ols_pred, y_true),
+                     orig_mae (ols_pred, y_true))
+
+# =====================================================
+# 2.  Decision Tree (CART) ----------------------------
+# =====================================================
+dt_grid <- expand.grid(cp = seq(0.001, 0.05, length.out = 10))
+t <- system.time({
+  dt_model <- train(
+    x = X_df,
+    y = log1p(y_true),
+    method = "rpart",
+    tuneGrid = dt_grid,
+    trControl = control,
+    metric = "RMSE"
+  )
+})
+dt_pred <- predict(dt_model, X_df)
+model_cmp <- add_row(model_cmp, "Decision Tree",
+                     t["elapsed"]/60,
+                     orig_rmse(dt_pred, y_true),
+                     orig_mae (dt_pred, y_true))
+
+
+# =====================================================
+# 3.  Random Forest (ranger) --------------------------
+# =====================================================
+p <- ncol(X_df)
+rf_grid <- expand.grid(
+  mtry          = pmax(1, c(floor(sqrt(p)/2), floor(sqrt(p)), floor(1.5*sqrt(p)))),
+  splitrule     = "variance",
+  min.node.size = c(5, 10, 20)
+)
+t <- system.time({
+  rf_model <- train(
+    x = X_df,
+    y = log1p(y_true),
+    method = "ranger",
+    importance = "impurity",
+    tuneGrid = rf_grid,
+    trControl = control,
+    num.trees = 500
+  )
+})
+rf_pred <- predict(rf_model, X_df)
+model_cmp <- add_row(model_cmp, "Random Forest",
+                     t["elapsed"]/60,
+                     orig_rmse(rf_pred, y_true),
+                     orig_mae (rf_pred, y_true))
+
+# =====================================================
+# 4.  XGBoost (xgbTree) -------------------------------
+#       — no ntree_limit warning —
+# =====================================================
+# ✅ Disable XGBoost logging (R-safe way)
+Sys.setenv(XGBOOST_VERBOSE = 0)
+
+
+
+xgb_grid <- expand.grid(
+  nrounds          = c(100, 200, 300),         # Fewer boosting rounds
+  eta              = c(0.01, 0.05),            # Lower learning rate (slower, but better generalization)
+  max_depth        = c(2, 3, 4),               # Shallower trees
+  gamma            = c(0.1, 0.5),              # Penalize overly complex splits
+  colsample_bytree = c(0.6, 0.8),              # Random feature subset (less correlated trees)
+  min_child_weight = c(3, 5),                  # Larger values = more conservative splits
+  subsample        = c(0.6, 0.8)               # Boosting on random subsets (prevents overfitting)
+)
+
+
+
+# Temporarily suppress XGBoost C++ warnings
+Sys.setenv(XGBOOST_VERBOSE = 0)   # still fine to keep
+
+t <- system.time({
+  suppressWarnings({                    # silence R-level warnings
+    tmp_txt <- capture.output(          # capture C++ “ntree_limit” lines
+      xgb_model <- train(               #  ...but keep the model
+        x = X_df,
+        y = log1p(y_true),
+        method   = "xgbTree",
+        tuneGrid = xgb_grid,
+        trControl = control,
+        metric   = "RMSE"
+      ),
+      file = NULL
+    )
+  })
+})
+
+
+
+# Predict with modern API
+best_booster <- xgb_model$finalModel
+best_rounds  <- xgb_model$bestTune$nrounds
+
+xgb_pred <- predict(
+  object  = best_booster,
+  newdata = as.matrix(X_df),
+  iteration_range = c(0, best_rounds)
+)
+
+model_cmp <- add_row(model_cmp, "XGBoost",
+                     t["elapsed"]/60,
+                     orig_rmse(xgb_pred, y_true),
+                     orig_mae (xgb_pred, y_true))
+
+# =====================================================
+# 5.  Results -----------------------------------------
+# =====================================================
+rownames(model_cmp) <- NULL
+
+
+```
+
+
+\newpage
+
+\section{Model Comparison and Discussion}
+
+
+```{r}
+# Print Comparison Table
+print(model_cmp[order(model_cmp$RMSE), ])
+```
+
+
+
+### Model Comparison and Discussion
+
+### Feature Importance plot:
+
+```{r}
+# -----------------------------------------------------
+# Plot: Random Forest Feature Importance
+# -----------------------------------------------------
+rf_imp <- varImp(rf_model, scale = TRUE)
+rf_imp_df <- rf_imp$importance
+rf_imp_df$Feature <- rownames(rf_imp_df)
+
+library(ggplot2)
+library(dplyr)
+
+# Convert to tibble and extract top 20 features
+top_rf <- rf_imp_df %>%
+  as_tibble() %>%
+  arrange(desc(Overall)) %>%
+  dplyr::slice(1:10)
+
+# Plot
+ggplot(top_rf, aes(x = reorder(Feature, Overall), y = Overall)) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  labs(
+    title = "Top 10 Most Important Features (RF)",
+    x = "Feature",
+    y = "Importance (Scaled)"
+  ) +
+  theme_minimal(base_size = 10)
+
+```
+
+
+
+
+```{r}
+# Save the model to the full path
+saveRDS(rf_model, file = file.path(output_path, "Random_forest_model_070125.rds"))
+```
+
+### Conclusion:
+
+Based on our analysis of 370 project records, predictive modeling for estimating expense start dates demonstrated limited reliability. Although the Random Forest model performed better than others, it still produced high error margins, making its predictions unsuitable for practical use. The overall lack of strong predictors, combined with a relatively small dataset and the absence of key operational variables (such as internal approvals or sponsor-related delays), limits the models' effectiveness. To improve forecasting accuracy, future efforts should focus on expanding the dataset and incorporating additional administrative and process-related features.

@@ -1,0 +1,153 @@
+---
+title: 'Spending start days prediction: Regression Approach'
+author: "Md Ismail Hossain"
+date: "2025-03-03"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,warning = FALSE, message = FALSE)
+```
+
+\newpage
+
+# Data Structure:
+
+
+```{r}
+# Get the Prepeared Data
+source("C:/Users/mhossa11/OneDrive - University of Wyoming/Projects/Indirect Cost Forecasting 02022025/Regression Approach/Code/1.Data_Preperation.R")
+
+
+```
+
+
+```{r}
+# Load required libraries
+library(GGally)
+library(MASS)
+
+# =============================
+# Convert Variables to Proper Data Types
+# =============================
+project_expenditure_indirect_cost_selected <- project_expenditure_indirect_cost_selected %>%
+  mutate(
+    `Project Fund Source` = as.factor(`Project Fund Source`),
+    `Project Funding Type` = as.factor(`Project Funding Type`),
+    `Project Designation` = as.factor(`Project Designation`),
+    `Project Type` = as.factor(`Project Type`),
+    Project_duration = as.numeric(Project_duration),
+    `Project Funding Amount` = as.numeric(`Project Funding Amount`),
+    Expense_starting_days = as.numeric(Expense_starting_days)
+  )
+
+
+```
+
+
+
+
+```{r}
+# =============================
+# Bivariate Relationships with Expense_starting_days
+# =============================
+ggpairs(project_expenditure_indirect_cost_selected, 
+        columns = c("Number_of_Project_as_Principal_Investigator", 
+                    "Total_project_person", "Project_duration", 
+                    "Project Funding Amount", "Expense_starting_days"))
+
+
+```
+
+
+
+
+
+# Ordinary Least Squares (OLS) Regression Model
+
+
+```{r}
+# =============================
+# Ordinary Least Squares (OLS) Regression Model
+# =============================
+ols_model <- lm(Expense_starting_days ~ Number_of_Project_as_Principal_Investigator+ Total_project_person + Project_duration + 
+                  `Project Funding Amount` + `Project Funding Type` + `Project Type`, 
+                data = project_expenditure_indirect_cost_selected)
+
+# Display OLS model summary
+summary(ols_model)
+```
+
+
+# Poisson Regression for Count Data
+
+```{r}
+# =============================
+# Poisson Regression for Count Data
+# =============================
+poisson_model <- glm(Expense_starting_days ~ Number_of_Project_as_Principal_Investigator + Total_project_person + Project_duration + 
+                       `Project Funding Amount` + `Project Funding Type` + `Project Type`, 
+                     family = poisson(link = "log"), 
+                     data = project_expenditure_indirect_cost_selected)
+
+# Display Poisson model summary
+summary(poisson_model)
+
+```
+
+
+# Negative Binomial Model
+
+
+
+```{r}
+paste0("Mean: ", mean(project_expenditure_indirect_cost_selected$Expense_starting_days)) 
+
+paste0("Variance: ", var(project_expenditure_indirect_cost_selected$Expense_starting_days)) 
+
+
+```
+
+As, Variance >> Mean (Overdispersion); we are using Negative Binomial Model.
+
+
+```{r}
+library(MASS)
+negbin_model <- glm.nb(Expense_starting_days ~ Number_of_Project_as_Principal_Investigator+ Total_project_person + Project_duration + 
+                          `Project Funding Amount` + `Project Funding Type` + `Project Type`, 
+                        data = project_expenditure_indirect_cost_selected)
+
+summary(negbin_model)
+```
+
+
+
+
+
+
+
+
+```{r}
+AIC(ols_model, poisson_model, negbin_model)
+```
+
+Looks like Negative Binomial is best so far!
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

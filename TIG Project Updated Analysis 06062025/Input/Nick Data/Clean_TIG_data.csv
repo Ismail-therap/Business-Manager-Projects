@@ -1,0 +1,53 @@
+Date,Year,PI,Title,Agency,Program,Completion Date,Internal,External,Other,Awarded_Status_By_TIG,Proposal #,Comment by Nick,Correct_Proposal_Status
+January,2023,Duan,UNITED: Multi-pronged resilient approach for addressing climate change effects on communities through interdependent networks,NSF,EPSCoR Track 2,1.24.23,X,X,,,23-1907-P0001,,Not Funded
+February,2023,Anderson,"Acquisition of a LHeP22 System with an automatic helium purifier, and extended helium recovery bag",NSF,MRI,2.14.23,X,,,,23-1633-P0001,,Not Funded
+February,2023,Park,Acquisition of a Leica STELLARIS 8 FALCON STED Confocal Microscope,NSF,MRI,2.20.23,X,,,,24-0553-P0001,,Not Funded
+March,2023,de Sousa Oliveira,Forecasting Thermoelectric Performance in 2D Metal-Organic Frameworks hrough Ab Initio Atomistic Modeling,DOE,Early CAREER,3.21.23,X,X,X,Yes,23-1838-P0001,,Funded
+March,2023,McCoy,PROCEED:  Perturbed physics ensemble Regression Optimization Center for ESM Evaluation and Development,DOE,EPSCoR,3.29.23,X,X,X,,23-1827-P0002,,Funded
+March,2023,Park,CAREER: Dynamic Organelle Communication in Plant Immunity,NSF,CAREER,3.11.23,,,X,,23-1669-P0001,,Not Funded
+April,2023,Shukla,CAREER: BrainCAPTCHA: Completely Automated Test for User Verification using Dynamic Brain Biometrics,NSF,CAREER,4.5.23,X,,X,Yes,24-0083-P0001,,Funded
+April,2023,Tian,RII Track -4:NSF: Exploring van der Waals Superconducting Josephson Junctions for Robust Qubits,NSF,EPSCoR Track 4,4.10.23,X,X,X,,23-1552-P0001,,Funded
+May,2023,Nguyen,CAREER: Energy Storage Systems in Microgrids: Optimal Operation and Control,NSF,CAREER,7.22.23,X,X,X,,24-0093-P0001,,Funded
+May,2023,Wang,Cross-Sectoral Infrastructure Research and Education for Communities,Global Center,Track 2,5.10.23,X,,,Yes,24-0347-P0001,,Not Funded
+June,2023,Biggs,Wyoming Business Resource Connections (WBRC),EDA,University Center Economic Development Program,6.28.23,X,,,,23-1919-P0001,,Funded
+June,2023,Webb,CAREER: Defining the Role of Snow in Storing and Transmitting Liquid Water to Generate Streamflow,NSF,CAREER,6.28.23,,,,,24-0006-P0001,,Funded
+June,2023,Yang,CAREER: Tracing the Influence of Climate and Historical Land-Use Practices in Shaping Current Forest Biodiversity and Health from Regions to the Continent,NSF,CAREER,7.26.25,X,X,,Yes,24-0068-P0001,,Not Funded
+June,2023,"Zhang, X.",CAREER:  Multiscale Reduced Order Modeling and Design of Heterogeneous Materials Under Volumetric and Interfacial Damage to Establish Microstructure-Property Relationship for Composite Materials,NSF,CAREER,7.25.23,X,X,X,Yes,24-0041-P0001,,Funded
+July,2023,Caulton,CAREER: Improving Methane Emission Quantification and Monitoring with Ethane Observations and Emission Forecasting,NSF,CAREER,7.10.23,X,,,,23-1537-P0001,,Not Funded
+July,2023,Jerred,Wyoming Economic Diversification Initiative (IMPACT-EDI),EDA,IMPACT 307,7.28.23,X,X,,Yes,23-1918-P0001,,Not Funded
+July,2023,Zhong,Brown Measure and Deformed non-Hermitian Random Matrices,NSF,CAREER,7.14.25,X,X,,Yes,24-0064-P0001,,Funded
+August,2023,He/Yang,NSF-Human-Environment and Geographical Sciences Program,NSF,HEGS,8.12.23,X,,,,24-0121-P0001,,Not Funded
+August,2023,Muknahallipatna,NRT-AI: Graduate Program in Explainable and Interpretable AI for Trustworthiness Research  (GREATER),NSF,NRT,8.25.23,,X,X,Yes,24-0171-P0001,,Not Funded
+August,2023,Yang,"Evaluating Long-term Impacts of Land-use Transformation on Fire Regimes: A Comprehensive 60-Year Analysis Utilizing CORONA, GEDI, and GLOBE Observer over Western U.S. Forest",NASA,Early CAREER,8.7.23,X,X,,,24-0122-P0001,,Funded
+September,2023,Wang,REU Site: Controlled Environment Agriculture (CEAfREU),NSF,REU,9.27.23,X,,,Yes,24-0446-P0001,,Funded
+November,2023,McCoy,Casually-aware diagnostics of aerosol-cloud-precipitation-radiation interactions,NOAA,Climate Program,11.9.23,X,X,X,Yes,24-0328-P0001,,Not Funded
+January,2024,McCoy,Constraining ice processes in complex terrain through a fusion of in situ observations and perturbed parameter modelling,DOE,Atmospheric Science Research,1.29.24,X,X,X,,24-0604-P0001,,Not Funded
+January,2024,Saito,Unveiling ice crystal growth in Arctic mixed-phase clouds: integrating advanced ARM remote sensing observations and direct numerical simulations (DNS),DOE,Atmospheric System Research,2.5.24,X,X,X,,24-0671-P0001,,Not Funded
+January,2024,Wang,RET Site: Controlled Environment Agriculture,NSF,RET,1.19.24,X,,,,,Wang has an NSF REU grant for controlled environment agriculture 24-0446-P0001. Perhaps it was a typo? ,Funded
+February,2024,de Sousa Oliveira,Investigation of the phonon thermal behavior at the interface between nuclear fuels and fission products during nano- to meso-structural evolution,DOE,EPSCoR,2.27.24,X,X,X,,24-0700-P0001,,Submitted to Sponsor
+February,2024,McCoy,Linking aerosol forcing and cloud feedback to atmospheric moisture processing,DOE,Earth System Model Development and Analysis,3.6.24,X,,X,,24-0680-P0001,,Funded
+March,2024,Nguyen,Post-Factum: Toward a Resilient Framework for Real-time Distributed Machine Learning in Dynamic and Zero Trust Environments using Static Analysis and Random Matrix Theory,NASA,EPSCoR R3,3.30.24,X,X,X,,24-0778-P0001,,Not Funded
+April,2024,Wang,NSF Engineering Research Center for Sustainable Food Future through Controlled Environment Agriculture (SF2-CEA),NSF,ERC,9.30.24,X,X,X,,25-0169-P0001,,Not Funded
+May,2024,Park,The Global Center for Leveraging Biodiversity from Extreme Environments for Infectious Disease and Food Security (LBEXID),NSF,Global Centers,6.8.24,X,X,,,24-1021-P0001,,Not Funded
+May,2024,Tsai,Revealing microscopic thermal and catalytic behaviors by controllable defect phases to construct solid framework from experimental to engineering space,DOD,MURI,5.17.24,X,X,X,,,,Record Not Found in Cayuse
+June,2024,Caulton,CAREER: Improving Methane Emission Quantification and Monitoring with Ethane Observations and Emission Forecasting,NSF,CAREER,7.5.24,X,X,,,24-1011-P0001,,Not Funded
+July,2024,Aerenson,Snow Energetics and SWE in the SnowEx Campaigns and Models (SESSCaM),NASA,Terrestrial Hydrology,8.1.24,X,X,,,25-0004-P0001,,Not Funded
+July,2024,McCoy,Causal understanding of aerosol-cloud interactions,NASA,Atmospheric Composition Modeling and Analysis Program,8.7.24,X,X,X,,25-0031-P0001,,Submitted to Sponsor
+July,2024,Park,Effect of climate change to Plant-fungal interaction in Antarctica,NSF,Antarctic Research Not Requiring U.S. Antarctic Program (USAP) Field Support,7.27.24,X,X,,,25-0016-P0001,,Submitted to Sponsor
+July,2024,Saito,CAREER: Advancing understanding of the microphysical processes in mixed-phase clouds (MPCs),NSF,CAREER,7.19.24,X,X,X,,24-1007-P0001,,Not Funded
+July,2024,Tellier,Post-Factum Review ofEnhancing Environmental Decision-Making: Spatial Statistical Methods for Reliable Site Assessment and Monitoring in the Presence of Left-Censored Data,NSF,Statiticis,8.26.24,,X,X,,24-0356-P0001,,Not Funded
+September,2024,Nguyen,Wyoming Initiative for New Scholars’ Potential  in Innovative Research and Engineering (Wyoming INSPIRE),NSF,EPSCoR GFRP,9.26.24,X,X,,,25-0110-P0001,,Not Funded
+October,2024,Nguyen,ERI: Profiling Faults for Resilient Distributed Machine Learning in Uncertain Environments,NSF,Engineering Research Initiation,10.8.24,X,X,,,25-0187-P0001,,PI Abandoned
+October,2024,Tang,Institute for Quantum and Topological Magnetism (IQTM),NSF,STC,11.19.24,X,X,X,,25-0332-P0001,,Not Funded
+October,2024,Tsai,ERI: Helicity-resolved magneto-Raman microscopy for topological chiral phonon studies in 2D magnet-semiconductor lateral multijunction,NSF,ERI,9.17.24,X,X,,,25-0118-P0001,,Not Funded
+October,2024,Wang,"Building Community-Driven CEA Ecosystems for Resilience, Equity, and Carbon Neutrality (REC-CEA) ",Knowledge and Innovation Covenant,Greenhouses in Transition,10.28.24,X,,,,,,Record Not Found in Cayuse
+November,2024,Geerts,Vertical Cloud and Aerosol Profiling,DOD/AFOSR,DEPSCoR,11.25.24,X,,,,25-0302-P0001,,Submitted to Sponsor
+November,2024,Tsai,LEAPS: MPS:  Helicity-resolved magneto-Raman microscopy for topological chiral phonon studies in 2D magnet-semiconductor lateral multijunction,NSF,LEAPS,12.5.24,X,X,,,25-0400-P0001,,PI Abandoned
+January,2025,de Sousa Oliveira,Investigation of the phonon thermal behavior at the interface between nuclear fuels and fission products during nano to mesostructural evolution,DOE,EPSCoR,1.26.25,X,X,X,,25-0219-P0001,,Submitted to Sponsor
+January,2025,McCoy,Creating the framework for the next generation Energy Exascale Earth System Model (E3SM) at PROCEED (Perturbed physics ensemble Regression Optimization Center for ESM Evaluation and Development),DOE,EPSCoR,1.20.25,X,X,X,,23-1827-P0001,,Funded
+January,2025,Zhou,Game of Imitation,NASA,EPSCoR,2.9.25,,X,,,25-0350-P0001,,Submitted to Sponsor
+February,2025,Tian,Quantum Leap Challenge Institute for Integrated Neuromorphic and Quantum Architectures,NSF,QLCI,3.3.25,X,X,,,25-0519-P0001,,In Development
+February,2025,Zhou,Development of an Autonomously Adaptive Computation Multi-agent Reinforcement Learning Algorithm for Large-Scale Multi-to-Multi Unmanned Ariel Vehicle Counter-Swarms,DARPA,Young Faculty Award,2.4.25,X,,X,,25-0321-P0001,,Submitted to Sponsor
+March,2025,Kotthoff,RI: Small: Predicting Optimization Curves,NSF,CISE Core,3.10.25,X,,,,25-0695-P0001,,In Development
+March,2025,Zhang,RII Track-4: NSF: Concurrent Macroscale Topology Optimization and Microscale Material Optimization (ConMaTOMiMO) for Composite Lattice Metamaterials,NSF,EPSCoR RII Track 4,4.4.25,X,X,,,25-0627-P0001,,Submitted to Sponsor
+April,2025,Zhang,[Title unknown],NSF,AM,Ongoing,,,X,,,,Record Not Found in Cayuse
