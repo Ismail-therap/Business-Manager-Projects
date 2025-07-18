@@ -2,7 +2,7 @@
 # SCRIPT 1: PROPOSAL DATA CLEANING & DATE CREATION
 # ================================================
 
-source("C:/Users/mhossa11/OneDrive - University of Wyoming/Projects/TIG Project Updated Analysis 06062025/Code/0_Data_Path_Configuration.R")
+source("C:/Users/mhossa11/OneDrive - University of Wyoming/Projects/Business Manager Jami Work Requests/TIG Project Updated Analysis 06062025/Code/0_Data_Path_Configuration.R")
 # =====================================================
 # STEP 1: Load and Clean Proposal Data
 # =====================================================
@@ -14,13 +14,7 @@ options(digits = 22)  # Max significant digits for printing
 proposal_data <- read_csv(Sys.getenv("PROPOSAL_DATA_PATH"))
 
 
-
-
 ### Filtering by Proposal type (keeping only the new proposal)
-
-
-
-
 
 
 # History Action Date and Comment column created:
@@ -123,24 +117,29 @@ Under_Consideration_cols <- c("Submitted to Sponsor to Under Consideration")
 Not_Funded_cols <- c("Not Funded","Not Funded_2","Not Funded_3")
 
 # All Submission Columns
+# Submission_cols <- c(
+#   "Approved to Submitted to Sponsor", "In Development to Submitted to Sponsor",
+#    "In Development to Submitted to Sponsor_2",
+#   "Approved to Submitted to Sponsor_2", "Under Review to Submitted to Sponsor",
+#   "Under Review to Submitted to Sponsor_2", "Under Consideration to Submitted to Sponsor",
+#   "Form was edited in 'Submitted to Sponsor' status_2"
+# )
+
 Submission_cols <- c(
   "Approved to Submitted to Sponsor", "In Development to Submitted to Sponsor",
-   "In Development to Submitted to Sponsor_2",
+  "In Development to Submitted to Sponsor_2",
   "Approved to Submitted to Sponsor_2", "Under Review to Submitted to Sponsor",
-  "Under Review to Submitted to Sponsor_2", "Under Consideration to Submitted to Sponsor",
-  "Form was edited in 'Submitted to Sponsor' status_2"
+  "Under Review to Submitted to Sponsor_2", "Under Consideration to Submitted to Sponsor"
 )
 
-# Submission_cols <- c(
-#   "Approved to Submitted to Sponsor",
-#   "Approved to Submitted to Sponsor_2")
 
 # All Funding Columns
 funding_cols <- c(
-  "Submitted to Sponsor to Funded", "Form was edited in 'Funded' status",
-  "Under Consideration to Funded", "Funded (Project Complete)",
+  "Submitted to Sponsor to Funded", 
+  "Under Consideration to Funded", 
   "Submitted to Sponsor to Funded_2"
 )
+
 
 
 
@@ -161,7 +160,17 @@ proposal_wide[existing_Udr_Consid_cols] <- lapply(proposal_wide[existing_Udr_Con
 proposal_wide[existing_not_funding_cols] <- lapply(proposal_wide[existing_not_funding_cols], function(x) mdy_hms(x, tz = "America/Denver"))
 
 
-# Create Actual Submission and Funding Dates
+# ================================================================
+# Create unified date columns by selecting the latest (non-NA) date 
+# across all related action columns for each proposal:
+# - Actual_Submission_Date: latest submission-related action
+# - Actual_Funding_Date: latest funding-related action
+# - Actual_Udr_Consid_Date: latest "under consideration" action
+# - Actual_Not_Funding_Date: latest "not funded" action
+# If no date is found, ensure result is NA (not Inf).
+# ================================================================
+
+
 proposal_wide <- proposal_wide %>%
   mutate(
     Actual_Submission_Date = pmax(!!!syms(existing_submission_cols), na.rm = TRUE),
@@ -191,13 +200,14 @@ proposal_wide <- proposal_wide %>%
 
 
 
-# Making Sure at least the Proposal Submitted
-# proposal_wide <- proposal_wide %>%
-#   filter(!is.na(Actual_Submission_Date))
-# 
 
+# Keep proposals that have either:
+# - a submission date
+# - or a funding date even if submission date is missing
 proposal_wide <- proposal_wide %>%
-  filter(!is.na(Actual_Submission_Date) | !is.na(Actual_Funding_Date))
+  filter(!is.na(Actual_Submission_Date) | (is.na(Actual_Submission_Date) & !is.na(Actual_Funding_Date)))
+
+
 
 # =====================================================
 # STEP 5: Finalizing Cleaned Proposal Data
@@ -297,7 +307,7 @@ college_name_data_Ashlee <- college_name_data_Ashlee %>%
 # Merge College Data with Award Data
 proposal_data <- left_join(proposal_data, 
                            college_name_data_Ashlee, 
-                                by = "Admin Unit") %>%
+                           by = "Admin Unit") %>%
   distinct()
 
 
@@ -439,8 +449,6 @@ proposal_data$Award_Count <- ifelse(proposal_data$Submission_Status == "Funded",
 proposal_data$Total_Submission_Count <- proposal_data$Submission_Count+proposal_data$Award_Count
 proposal_data$Received_Total_Sponsor_Costs <- ifelse(proposal_data$Submission_Status == "Funded",proposal_data$`Total Sponsor Costs`,0)
 
-# proposal_data <- proposal_data %>%
-#   filter(`Proposal Type` == "New")
 
 
 
@@ -456,9 +464,7 @@ proposal_data_subsetted <- proposal_data %>%
     `Sponsor_Type_Grouped`, `Sponsor_Category`, `Submission_Status`, `Submission_Count`, `Award_Count`,
     `Total_Submission_Count`, `Received_Total_Sponsor_Costs`
   )
-
-
-output_path_prop <- file.path(output_path, "Processed_Proposal_Data_Subsetted.csv")
-
-write.csv(proposal_data_subsetted,output_path_prop,row.names=F,na="")
-
+# output_path_prop <- file.path(output_path, "Processed_Proposal_Data_Subsetted.csv")
+# 
+# write.csv(proposal_data_subsetted,output_path_prop,row.names=F,na="")
+# 

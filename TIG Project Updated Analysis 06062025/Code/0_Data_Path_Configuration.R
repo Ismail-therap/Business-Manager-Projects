@@ -15,14 +15,22 @@ library(tidyr)      # For reshaping data
 # =====================================================
 
 # 📌 Base Data Directory
-base_path <- "C:/Users/mhossa11/OneDrive - University of Wyoming/Projects/TIG Project Updated Analysis 06062025/Input"
+base_path <- "C:/Users/mhossa11/OneDrive - University of Wyoming/Projects/Business Manager Jami Work Requests/TIG Project Updated Analysis 06062025/Input"
+# 📌 Define Base Output Directory
+output_path <- "C:/Users/mhossa11/OneDrive - University of Wyoming/Projects/Business Manager Jami Work Requests/TIG Project Updated Analysis 06062025/Output"
 
-
+proposal_data_path <- "C:/Users/mhossa11/OneDrive - University of Wyoming/Projects/RoamWyo and WyoCloud Data/RoamWyo/Proposal"
+award_data_path <- "C:/Users/mhossa11/OneDrive - University of Wyoming/Projects/RoamWyo and WyoCloud Data/RoamWyo/Award"
 
 # 📌 Define File Paths Using Base Path
 # Cayuse Data
-proposal_data_path <- file.path(base_path, "Cayuse Data/Proposal_Data_All_06032025.csv")
-award_data_path <- file.path(base_path, "Cayuse Data/Award_Data_All_06032025.csv")
+proposal_data_path <- file.path(proposal_data_path, "Proposal_Data_07182025.csv") # Need to update this file name
+award_data_path <- file.path(award_data_path, "Award_Data_07182025.csv") # Need to update this file name
+
+Nick_path <- file.path(base_path, "Nick Data/")
+TIG_Data_From_Nick <- file.path(Nick_path, "TIG utilization report July 2025.xlsx") # Need to update this file name
+
+
 
 
 wyocloud_path <- file.path(base_path, "WyoCloud Data/")
@@ -36,16 +44,13 @@ college_name_data_path <- file.path(wyocloud_path, "Award External Funding By De
 Ashlee_path <- file.path(base_path, "Ashlee/")
 college_name_data_path_Ashlee <- file.path(Ashlee_path, "College_Admin_Unit_Mapping.xlsx")
 
-Nick_path <- file.path(base_path, "Nick Data/")
-TIG_Data_From_Nick <- file.path(Nick_path, "UWyo_UtilizationReport_1.1.23 - 5.1.25_TIG_5.1.25.xlsx")
+
 
 
 # =====================================================
 # STEP 2: Define Output Paths
 # =====================================================
 
-# 📌 Define Base Output Directory
-output_path <- "C:/Users/mhossa11/OneDrive - University of Wyoming/Projects/TIG Project Updated Analysis 06062025/Output"
 
 # 📌 Define Output File Names
 # output_merged_fsu_award_path <- file.path(output_path, "filtered_award_non_award_with_FSU_031925.csv")

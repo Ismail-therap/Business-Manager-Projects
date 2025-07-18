@@ -2,7 +2,7 @@
 # SCRIPT 2: PROJECT FINANCIAL DATA CLEANING & MERGING
 # ================================================
 
-code_base_path <- "C:/Users/mhossa11/OneDrive - University of Wyoming/Projects/TIG Project Updated Analysis 06062025/Code"
+code_base_path <- "C:/Users/mhossa11/OneDrive - University of Wyoming/Projects/Business Manager Jami Work Requests/TIG Project Updated Analysis 06062025/Code"
 source(file.path(code_base_path, "0_Data_Path_Configuration.R"))
 source(file.path(code_base_path, "1_Updated_Proposal_data_load_and_clean_from_Cayuse.R"))
 source(file.path(code_base_path, "2_Award_Data_Preperation_from_Cayuse.R"))
@@ -11,7 +11,7 @@ source(file.path(code_base_path, "2_Award_Data_Preperation_from_Cayuse.R"))
 
 ############################# Data request: Jami 04182025 ##
 
-award_non_award_subset <- proposal_data %>%
+proposal_data_subset <- proposal_data %>%
   filter(!is.na(PI) & PI != "") %>%
   select(
     `Proposal #`,
@@ -44,13 +44,17 @@ award_non_award_subset <- proposal_data %>%
   )
 
 
+Clean_TIG_data <- read_excel(TIG_Data_From_Nick)
 
-Clean_TIG_data <- read_csv("Input/Nick Data/Clean_TIG_data.csv") # Did manual check of every id to clean the status column and create "Correct_Proposal_Status" column
 # Clean_TIG_data_subsetted <- Clean_TIG_data %>%
 #   select("Proposal #","Awarded_Status_By_TIG","PI","Title")
-merged_data <- left_join(award_non_award_subset, Clean_TIG_data, by = "Proposal #") %>%
+merged_data <- left_join(proposal_data_subset, Clean_TIG_data, by = "Proposal #") %>%
   distinct(`Proposal #`, .keep_all = TRUE)
 
 
-output_path_raw_processed <- file.path(output_path, "Cayuse_TIG_Merged_06202025.csv")
+output_path_raw_processed <- file.path(output_path, "/07182025/Cayuse_TIG_Merged_07182025.csv")
+TIG_data_path <- file.path(output_path, "/07182025/Clean_TIG_data_07182025.csv")
+
+
+write.csv(Clean_TIG_data,TIG_data_path,row.names=F,na="")
 write.csv(merged_data,output_path_raw_processed,row.names=F,na="")
