@@ -204,8 +204,14 @@ proposal_wide <- proposal_wide %>%
 # Keep proposals that have either:
 # - a submission date
 # - or a funding date even if submission date is missing
+# - or a non funding date even if submission date is missing
 proposal_wide <- proposal_wide %>%
-  filter(!is.na(Actual_Submission_Date) | (is.na(Actual_Submission_Date) & !is.na(Actual_Funding_Date)))
+  filter(
+    !is.na(Actual_Submission_Date) |
+      (!is.na(Actual_Funding_Date) | !is.na(Actual_Not_Funding_Date))
+  )
+
+
 
 
 
@@ -225,19 +231,46 @@ proposal_data <- merge(proposal_data, proposal_data_submission_funding_date, by 
 # STEP 6: Creating the FY columns from the Dates by the Status
 #========================================================================
 
+# Step 1: Convert all relevant date columns
 proposal_data <- proposal_data %>%
   mutate(
     `Created Date` = as.POSIXct(`Created Date`, format = "%m/%d/%Y %I:%M:%S %p", tz = "UTC"),
-    Actual_Submission_Date = ymd_hms(Actual_Submission_Date, tz = "America/Denver"),
-    Actual_Udr_Consid_Date = ymd_hms(Actual_Udr_Consid_Date, tz = "America/Denver"),
-    Actual_Funding_Date = ymd_hms(Actual_Funding_Date, tz = "America/Denver"),
-    Actual_Not_Funding_Date = ymd_hms(Actual_Not_Funding_Date, tz = "America/Denver"),
-    
+    Actual_Submission_Date = as.POSIXct(as.numeric(Actual_Submission_Date), origin = "1970-01-01", tz = "UTC"),
+    Actual_Udr_Consid_Date = ymd_hms(Actual_Udr_Consid_Date, tz = "UTC"),
+    Actual_Funding_Date = ymd_hms(Actual_Funding_Date, tz = "UTC"),
+    Actual_Not_Funding_Date = ymd_hms(Actual_Not_Funding_Date, tz = "UTC")
+  )
+
+# Step 2: Fill missing Actual_Submission_Date using Created Date, if Funded
+proposal_data <- proposal_data %>%
+  mutate(
+    Comments = case_when(
+      Status == "Funded" & is.na(Actual_Submission_Date) & !is.na(`Created Date`) ~ 
+        "Created Date Imputed because Submission Date is missing for Funded proposal!",
+      Status == "Not Funded" & is.na(Actual_Submission_Date) & !is.na(`Created Date`) ~ 
+        "Created Date Imputed because Submission Date is missing for Not Funded proposal!",
+      TRUE ~ NA_character_
+    ),
+    Actual_Submission_Date = if_else(
+      (Status %in% c("Funded", "Not Funded")) & is.na(Actual_Submission_Date),
+      `Created Date`,
+      Actual_Submission_Date
+    )
+  )
+
+# Step 3: Calculate fiscal years using your get_fy() logic
+proposal_data <- proposal_data %>%
+  mutate(
     Actual_Submission_FY = get_fy(Actual_Submission_Date),
     Actual_Udr_Consid_FY = get_fy(Actual_Udr_Consid_Date),
     Actual_Funding_FY = get_fy(Actual_Funding_Date),
     Actual_Not_Funding_FY = get_fy(Actual_Not_Funding_Date)
   )
+
+
+
+
+
 # Adding the Proposal Creation date and creation FY
 proposal_data <- merge(proposal_data,cleaned_Created_date,by = "Proposal #")
 
@@ -278,8 +311,8 @@ proposal_data <- proposal_data %>%
   filter(!(is.na(`Project Title`) & is.na(PI)))
 
 
-proposal_data <- proposal_data %>%
-  filter(!( is.na(PI)))
+# proposal_data <- proposal_data %>%
+#   filter(!( is.na(PI)))
 
 proposal_data <- proposal_data %>%
   mutate(
@@ -462,8 +495,10 @@ proposal_data_subsetted <- proposal_data %>%
     `Proposal_Creation_FY`, `Days_to_Submission`, `Days_to_Funding_From_Submission`, `Days_to_Non_Funding_From_Submission`,
     `Actual_Submission_Month_Year`, `College/Division`, `Actual_Submission_Quarter`, `Actual_Funding_Quarter`,
     `Sponsor_Type_Grouped`, `Sponsor_Category`, `Submission_Status`, `Submission_Count`, `Award_Count`,
-    `Total_Submission_Count`, `Received_Total_Sponsor_Costs`
+    `Total_Submission_Count`, `Received_Total_Sponsor_Costs`,Comments
   )
+
+
 # output_path_prop <- file.path(output_path, "Processed_Proposal_Data_Subsetted.csv")
 # 
 # write.csv(proposal_data_subsetted,output_path_prop,row.names=F,na="")

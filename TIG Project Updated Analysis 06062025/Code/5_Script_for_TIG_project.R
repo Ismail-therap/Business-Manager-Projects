@@ -40,7 +40,8 @@ proposal_data_subset <- proposal_data %>%
     `Days_to_Funding_From_Submission`,
     `Days_to_Non_Funding_From_Submission`,
     `College/Division`,
-    `Total Sponsor Costs`
+    `Total Sponsor Costs`,
+    Comments
   )
 
 
@@ -52,8 +53,8 @@ merged_data <- left_join(proposal_data_subset, Clean_TIG_data, by = "Proposal #"
   distinct(`Proposal #`, .keep_all = TRUE)
 
 
-output_path_raw_processed <- file.path(output_path, "/07182025/Cayuse_TIG_Merged_07182025.csv")
-TIG_data_path <- file.path(output_path, "/07182025/Clean_TIG_data_07182025.csv")
+output_path_raw_processed <- file.path(output_path, "/07182025/Cayuse_TIG_Merged_07222025.csv")
+TIG_data_path <- file.path(output_path, "/07182025/Clean_TIG_data_07222025.csv")
 
 
 write.csv(Clean_TIG_data,TIG_data_path,row.names=F,na="")
